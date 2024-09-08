@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated MCQs</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            width: 300px;
+            margin: 20px auto;
+        }
+        .correct-answer {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 id="generated-mcqs" class="mt-4 text-center">Generated MCQs</h1>
+
+        <div id="mcqs-container" class="container">
+            {% for index, mcq in mcqs %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 id="q-{{ index }}-{{ mcq[0] }}" class="card-title">Q{{ index }}: {{ mcq[0] }}?</h5>
+
+                    {% set options = ['A', 'B', 'C', 'D'] %}
+                    {% for choice_index in range(mcq[1]|length) %}
+                    <div class="form-check">
+                        <input type="radio" name="q{{ index }}" value="{{ options[choice_index] }}" class="form-check-input">
+                        <label class="form-check-label">
+                            {{ options[choice_index] }}: {{ mcq[1][choice_index] }}
+                        </label>
+                    </div>
+                    {% endfor %}
+                    <small class="text-muted correct-answer">Correct Answer: {{ mcq[2] }}</small>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div class="text-center">
+                <button id="show-results" class="btn btn-primary">Show Results</button>
+            </div>
+
+            <div id="score-display" class="mt-3 text-center" style="display: none;"></div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="resultsChart"></canvas>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        document.getElementById('show-results').addEventListener('click', function() {
+            const questions = document.querySelectorAll('.card');
+            let score = 0;
+            let totalAnswered = 0;
+            
+            questions.forEach((question, index) => {
+                const selectedAnswer = question.querySelector('input[type="radio"]:checked');
+                const correctAnswerElement = question.querySelector('.correct-answer');
+                const correctAnswer = correctAnswerElement.textContent.split(': ')[1];
+                const options = question.querySelectorAll('.form-check');
+                
+                correctAnswerElement.style.display = 'block';
+                
+                // Disable all radio buttons
+                question.querySelectorAll('input[type="radio"]').forEach(radio => {
+                    radio.disabled = true;
+                });
+                
+                if (selectedAnswer) {
+                    totalAnswered++;
+                    options.forEach((option, optionIndex) => {
+                        const label = option.querySelector('label');
+                        const optionValue = String.fromCharCode(65 + optionIndex); // Convert to A, B, C, D
+                        
+                        if (optionValue === correctAnswer) {
+                            label.style.color = 'green';
+                        }
+                        
+                        if (selectedAnswer.value === optionValue) {
+                            if (selectedAnswer.value === correctAnswer) {
+                                label.style.color = 'green';
+                                score++;
+                            } else {
+                                label.style.color = 'red';
+                            }
+                        }
+                    });
+                }
+            });
+            
+            const scoreDisplay = document.getElementById('score-display');
+            scoreDisplay.textContent = `Your score: ${score}/${totalAnswered}`;
+            scoreDisplay.style.display = 'block';
+
+            // Create chart
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Correct', 'Incorrect'],
+                    datasets: [{
+                        data: [score, totalAnswered - score],
+                        backgroundColor: ['#28a745', '#dc3545']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'Results Summary'
+                    }
+                }
+            });
+
+            // Disable the "Show Results" button
+            this.disabled = true;
+        });
+    </script>
+</body>
+</html>
